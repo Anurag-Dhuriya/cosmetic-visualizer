@@ -1,0 +1,255 @@
+# 🧴 Cosmetic Visualizer — User Guide
+
+> **For testing purposes only. This is not a medical device.**
+
+---
+
+## Table of Contents
+
+1. [What This App Does](#what-this-app-does)
+2. [Before You Start](#before-you-start)
+3. [Starting the App](#starting-the-app)
+4. [Using the App Step by Step](#using-the-app-step-by-step)
+5. [Understanding the Interface](#understanding-the-interface)
+6. [All Available Treatments](#all-available-treatments)
+7. [Tips for Best Results](#tips-for-best-results)
+8. [Known Limitations](#known-limitations)
+9. [Troubleshooting](#troubleshooting)
+
+---
+
+## What This App Does
+
+The Cosmetic Visualizer lets you upload a patient photo and simulate how different cosmetic treatments (fillers, lifts, contouring) would look — before any actual procedure is done.
+
+It is designed for **visualization and consultation purposes only**.
+
+---
+
+## Before You Start
+
+Make sure both the backend and frontend servers are running.
+
+**Terminal 1 — Start the backend:**
+```bash
+cd cosmetic-visualizer
+source venv/bin/activate        # Mac/Linux
+# OR: venv\Scripts\activate     # Windows
+uvicorn app.main:app --reload --port 8000
+```
+
+**Terminal 2 — Start the frontend:**
+```bash
+cd cosmetic-visualizer
+npm run dev
+```
+
+Then open your browser and go to:
+```
+http://localhost:5173
+```
+
+---
+
+## Using the App Step by Step
+
+### Step 1 — Upload a Photo
+
+- Click the **"Upload Photo"** button in the top-right of the preview area
+- Select a photo from your device
+- ✅ Accepted formats: **JPG, JPEG, PNG**
+- ✅ Maximum file size: **10 MB**
+- The photo will appear in the preview panel once uploaded
+
+> **Best results:** Use a clear, front-facing photo with good lighting and a neutral expression. Avoid sunglasses, heavy shadows, or extreme angles.
+
+---
+
+### Step 2 — Pick a Category
+
+In the **left sidebar**, click one of the four categories:
+
+| Category | What it affects |
+|----------|----------------|
+| **Face** | Temples, cheeks, chin, jawline, forehead, folds |
+| **Lips** | Overall volume, shape, corners |
+| **Nose** | Bridge, tip, width, root |
+| **Eyebrows** | Height and arch |
+
+The selected category will highlight in blue.
+
+---
+
+### Step 3 — Pick a Treatment
+
+In the **right panel**, the **Treatment** dropdown will show all available treatments for your selected category.
+
+Click the dropdown and select the specific treatment you want to simulate.
+
+---
+
+### Step 4 — Adjust the Intensity
+
+Use the **Intensity slider** (0% to 100%) to control how strong the effect is.
+
+- **Low (0–30%)** — subtle, natural-looking result
+- **Medium (40–70%)** — noticeable but realistic
+- **High (80–100%)** — strong, exaggerated effect (useful for testing)
+
+---
+
+### Step 5 — Adjust Position (Optional)
+
+Use the **X** and **Y position sliders** to fine-tune where the effect is applied:
+
+- **X slider** — moves the effect left or right
+- **Y slider** — moves the effect up or down
+
+Leave both at **0** to use the automatically detected position from the face landmarks.
+
+---
+
+### Step 6 — Click Preview (Fast)
+
+Click the **"Preview (fast)"** button to see the result.
+
+- This runs the transformation on a **lower resolution copy** of the image
+- It is fast (usually 1–3 seconds)
+- A spinning loader will appear while it's processing
+- The result will appear in the preview panel
+
+> Use this for quick back-and-forth adjustments.
+
+---
+
+### Step 7 — Apply Final (Full Resolution)
+
+When you are happy with the preview, click **"Apply Final"**.
+
+- This runs the transformation on the **full resolution original image**
+- It takes longer (5–15 seconds depending on image size)
+- The high-quality result will appear in the preview panel
+
+---
+
+### Step 8 — Dark / Light Mode
+
+Click the **moon / sun icon** in the top-right header to toggle between dark and light mode.
+
+---
+
+## Understanding the Interface
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  HEADER:  Logo | Dark Mode Toggle | Save | History       │
+├──────────┬──────────────────────────┬───────────────────┤
+│          │                          │                   │
+│ SIDEBAR  │     PREVIEW AREA         │  CONTROL PANEL    │
+│          │                          │                   │
+│ Category │  Upload button           │  Category display │
+│ buttons  │                          │  Treatment menu   │
+│          │  ┌────────────────────┐  │  Intensity slider │
+│ Quick    │  │                    │  │  X/Y sliders      │
+│ Compare  │  │   Image appears    │  │                   │
+│          │  │   here after       │  │  Preview (fast)   │
+│ History  │  │   upload           │  │  Apply Final      │
+│          │  │                    │  │                   │
+│          │  └────────────────────┘  │  Notes box        │
+│          │                          │                   │
+└──────────┴──────────────────────────┴───────────────────┘
+```
+
+---
+
+## All Available Treatments
+
+### 😊 Face
+| Treatment | What it simulates |
+|-----------|------------------|
+| Temples Fillers | Adds volume to the temple areas on both sides |
+| Cheek Fillers | Enhances and lifts the cheekbones |
+| Chin Fillers | Projects and defines the chin |
+| Jawline Contouring | Sharpens and defines the jawline |
+| Forehead Lines | Smooths forehead wrinkles |
+| Glabellar Lines | Reduces frown lines between the eyebrows |
+| Nasolabial Folds | Softens smile lines from nose to mouth |
+| Marionette Folds | Reduces lines from mouth corners downward |
+
+### 💋 Lips
+| Treatment | What it simulates |
+|-----------|------------------|
+| Plumper | Increases overall lip volume |
+| Cupids Bow | Accentuates the M-shape on the upper lip |
+| Upper Lip Fillers | Adds volume to the upper lip only |
+| Lower Lip Fillers | Adds volume to the lower lip only |
+| Corner Lip Lift Fillers | Lifts the corners of the mouth slightly |
+
+### 👃 Nose
+| Treatment | What it simulates |
+|-----------|------------------|
+| Contouring | Adds shadow definition to slim the nose |
+| Bridge Fillers | Adds volume and definition to the nose bridge |
+| Root Fillers | Smooths the transition between nose and forehead |
+| Tip Lift Fillers | Lifts the nose tip upward |
+| Slimming Fillers | Narrows the overall width of the nose |
+
+### 🤨 Eyebrows
+| Treatment | What it simulates |
+|-----------|------------------|
+| Brow Lift | Lifts both eyebrows for a more alert, youthful look |
+
+---
+
+## Tips for Best Results
+
+- **Use a well-lit, front-facing photo** — side angles or tilted heads reduce accuracy
+- **Neutral expression works best** — smiling or frowning affects landmark detection
+- **Plain background** helps the face detector focus on the face
+- **Start with low intensity** (20–40%) and increase gradually
+- **Try Preview (fast) first** to find the right settings, then click Apply Final for the quality result
+- **One treatment at a time** — apply and review each treatment individually
+- If the result looks off, try adjusting the X/Y position sliders slightly
+
+---
+
+## Known Limitations
+
+- Only **one face per photo** is supported
+- Works best on **front-facing photos** — profile or extreme angles may not detect landmarks correctly
+- **Accessories** like glasses, masks, or heavy makeup may affect accuracy
+- The app is a **visualization tool only** — results do not represent guaranteed outcomes of real procedures
+- Very small or low-resolution images (under 200×200px) may not detect faces reliably
+
+---
+
+## Troubleshooting
+
+| Problem | Likely Cause | Fix |
+|---------|-------------|-----|
+| Photo uploads but nothing shows | Backend not running | Check Terminal 1 shows `Uvicorn running` |
+| "No face detected" error | Photo angle or quality | Use a clearer, front-facing photo |
+| Spinner keeps spinning | Backend crashed | Check Terminal 1 for error messages |
+| App won't open in browser | Frontend not running | Check Terminal 2 and run `npm run dev` |
+| Result looks identical to original | Intensity too low | Increase intensity slider to 50%+ |
+| "Could not connect to backend" | Wrong port or backend stopped | Restart backend with `uvicorn app.main:app --reload --port 8000` |
+| Using on another device and can't connect | Using `localhost` in `API_BASE` | Update `API_BASE` in `App.tsx` to your computer's local IP |
+
+---
+
+## Quick Reference Card
+
+```
+1. Open http://localhost:5173
+2. Click "Upload Photo" → select a JPG or PNG
+3. Choose a Category from the left sidebar
+4. Choose a Treatment from the right panel dropdown
+5. Adjust Intensity slider (try 50% to start)
+6. Click "Preview (fast)" → see the result
+7. Fine-tune sliders → click Preview again
+8. Click "Apply Final" for full quality output
+```
+
+---
+
+*Cosmetic Visualizer • Demo UI • Not a medical device • For visualization only*

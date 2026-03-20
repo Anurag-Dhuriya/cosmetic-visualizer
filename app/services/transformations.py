@@ -84,23 +84,24 @@ class FacialTransformations:
         
         # Apply small upward warp to accentuate the bow
         radius = 15 + int(intensity * 10)
-        
-        # Create upward pull effect
-        for i in range(-radius, radius):
-            for j in range(-radius, radius):
-                x, y = center_x + i, center_y + j
-                
-                if 0 <= x < result.shape[1] and 0 <= y < result.shape[0]:
-                    distance = np.sqrt(i**2 + j**2)
-                    
-                    if distance < radius:
-                        factor = (1 - distance / radius) * intensity
-                        # Pull slightly upward to enhance the peak
-                        shift_y = int(factor * 3)
-                        
-                        if 0 <= y - shift_y < result.shape[0]:
-                            result[y, x] = image[y - shift_y, x]
-        
+
+        # Vectorized upward pull effect
+        h, w = result.shape[:2]
+        y0 = max(0, center_y - radius)
+        y1 = min(h, center_y + radius)
+        x0 = max(0, center_x - radius)
+        x1 = min(w, center_x + radius)
+
+        gy, gx = np.mgrid[y0:y1, x0:x1]
+        di = gx - center_x
+        dj = gy - center_y
+        distance = np.sqrt(di**2 + dj**2)
+        inside = distance < radius
+        factor = np.where(inside, (1 - distance / radius) * intensity, 0)
+        shift_y = (factor * 3).astype(int)
+        src_y = np.clip(gy - shift_y, 0, h - 1)
+        result[gy, gx] = image[src_y, gx]
+
         return result
     
     def apply_upper_lip_fillers(self, image: np.ndarray, landmarks: Dict, 
@@ -188,27 +189,26 @@ class FacialTransformations:
             center_x = int(corner_x)
             center_y = int(corner_y)
             radius = 20
-            
-            # Calculate upward shift
             lift_amount = int(intensity * 8)
-            
-            # Apply upward warp
-            for i in range(-radius, radius):
-                for j in range(-radius, radius):
-                    x, y = center_x + i, center_y + j
-                    
-                    if 0 <= x < result.shape[1] and 0 <= y < result.shape[0]:
-                        distance = np.sqrt(i**2 + j**2)
-                        
-                        if distance < radius:
-                            factor = (1 - distance / radius) * intensity
-                            shift_y = int(factor * lift_amount)
-                            
-                            if 0 <= y - shift_y < result.shape[0]:
-                                result[y, x] = image[y - shift_y, x]
-        
+
+            h, w = result.shape[:2]
+            y0 = max(0, center_y - radius)
+            y1 = min(h, center_y + radius)
+            x0 = max(0, center_x - radius)
+            x1 = min(w, center_x + radius)
+
+            gy, gx = np.mgrid[y0:y1, x0:x1]
+            di = gx - center_x
+            dj = gy - center_y
+            distance = np.sqrt(di**2 + dj**2)
+            inside = distance < radius
+            factor = np.where(inside, (1 - distance / radius) * intensity, 0)
+            shift_y = (factor * lift_amount).astype(int)
+            src_y = np.clip(gy - shift_y, 0, h - 1)
+            result[gy, gx] = image[src_y, gx]
+
         return result
-    
+
     # ==================== NOSE TRANSFORMATIONS ====================
     
     def apply_nose_bridge_fillers(self, image: np.ndarray, landmarks: Dict, 
@@ -251,22 +251,21 @@ class FacialTransformations:
         
         radius = 20
         lift_amount = int(intensity * 10)
-        
-        # Apply upward warp
-        for i in range(-radius, radius):
-            for j in range(-radius, radius):
-                x, y = center_x + i, center_y + j
-                
-                if 0 <= x < result.shape[1] and 0 <= y < result.shape[0]:
-                    distance = np.sqrt(i**2 + j**2)
-                    
-                    if distance < radius:
-                        factor = (1 - distance / radius) * intensity
-                        shift_y = int(factor * lift_amount)
-                        
-                        if 0 <= y - shift_y < result.shape[0]:
-                            result[y, x] = image[y - shift_y, x]
-        
+
+        # Vectorized upward warp
+        h, w = result.shape[:2]
+        y0 = max(0, center_y - radius)
+        y1 = min(h, center_y + radius)
+        x0 = max(0, center_x - radius)
+        x1 = min(w, center_x + radius)
+
+        gy, gx = np.mgrid[y0:y1, x0:x1]
+        distance = np.sqrt((gx - center_x)**2 + (gy - center_y)**2)
+        factor = np.where(distance < radius, (1 - distance / radius) * intensity, 0)
+        shift_y = (factor * lift_amount).astype(int)
+        src_y = np.clip(gy - shift_y, 0, h - 1)
+        result[gy, gx] = image[src_y, gx]
+
         return result
     
     def apply_nose_slimming(self, image: np.ndarray, landmarks: Dict, 
@@ -316,24 +315,22 @@ class FacialTransformations:
             # Calculate brow width
             brow_width = max([p['x'] for p in brow_points]) - min([p['x'] for p in brow_points])
             radius = int(brow_width * 0.6)
-            
             lift_amount = int(intensity * 12)
-            
-            # Apply upward warp
-            for i in range(-radius, radius):
-                for j in range(-radius, radius):
-                    x, y = center_x + i, center_y + j
-                    
-                    if 0 <= x < result.shape[1] and 0 <= y < result.shape[0]:
-                        distance = np.sqrt(i**2 + j**2)
-                        
-                        if distance < radius:
-                            factor = (1 - distance / radius) * intensity
-                            shift_y = int(factor * lift_amount)
-                            
-                            if 0 <= y - shift_y < result.shape[0]:
-                                result[y, x] = image[y - shift_y, x]
-        
+
+            # Vectorized upward warp
+            h, w = result.shape[:2]
+            y0 = max(0, center_y - radius)
+            y1 = min(h, center_y + radius)
+            x0 = max(0, center_x - radius)
+            x1 = min(w, center_x + radius)
+
+            gy, gx = np.mgrid[y0:y1, x0:x1]
+            distance = np.sqrt((gx - center_x)**2 + (gy - center_y)**2)
+            factor = np.where(distance < radius, (1 - distance / radius) * intensity, 0)
+            shift_y = (factor * lift_amount).astype(int)
+            src_y = np.clip(gy - shift_y, 0, h - 1)
+            result[gy, gx] = image[src_y, gx]
+
         return result
     
     # ==================== FACE TRANSFORMATIONS ====================
@@ -480,8 +477,8 @@ class FacialTransformations:
             result = self.transformer.smooth_skin_region(result, mask, intensity)
         
         return result
-    
-        # -------------------- ADDITIONAL FACE TRANSFORMATIONS --------------------
+
+    # ==================== ADDITIONAL FACE TRANSFORMATIONS ====================
 
     def apply_temples_fillers(self, image: np.ndarray, landmarks: Dict,
                               intensity: float, position_adjustment: Tuple[float, float] = (0, 0)) -> np.ndarray:
@@ -533,8 +530,13 @@ class FacialTransformations:
 
         # If only a couple points exist, expand them into a small region
         if len(pts) < 3:
-            cx = int(np.mean([p['x'] for p in landmarks['landmarks']]))
-            cy = int(np.mean([p['y'] for p in landmarks['landmarks']]))
+            # Fall back to using the glabella points themselves (or image center)
+            if pts:
+                cx = int(np.mean([p[0] for p in pts]))
+                cy = int(np.mean([p[1] for p in pts]))
+            else:
+                cx = image.shape[1] // 2
+                cy = image.shape[0] // 2
             pts = [(cx - 10, cy - 5), (cx, cy + 5), (cx + 10, cy - 5)]
 
         smooth_contour = self.transformer.create_smooth_contour(pts, num_points=80)

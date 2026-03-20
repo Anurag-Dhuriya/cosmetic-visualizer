@@ -1,24 +1,42 @@
-import { useState } from "react";
-
 interface ControlPanelProps {
   selectedCategory: string;
+  selectedTreatment: string;
+  onTreatmentChange: (treatment: string) => void;
   intensity: number;
   onIntensityChange: (value: number) => void;
   xPosition: number;
   onXPositionChange: (value: number) => void;
   yPosition: number;
   onYPositionChange: (value: number) => void;
+  onPreview: () => void;
+  onApplyFinal: () => void;
+}
+
+const TREATMENTS_BY_CATEGORY: Record<string, string[]> = {
+  Face: ['temples_fillers', 'cheek_fillers', 'chin_fillers', 'jawline_contouring', 'forehead_lines', 'glabellar_lines', 'nasolabial_folds', 'marionette_folds'],
+  Lips: ['plumper', 'cupids_bow', 'upper_lip_fillers', 'lower_lip_fillers', 'corner_lip_lift_fillers'],
+  Nose: ['contouring', 'bridge_fillers', 'root_fillers', 'tip_lift_fillers', 'slimming_fillers'],
+  Eyebrows: ['brow_lift'],
+};
+
+function formatTreatmentName(treatment: string): string {
+  return treatment.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export function ControlPanel({
   selectedCategory,
+  selectedTreatment,
+  onTreatmentChange,
   intensity,
   onIntensityChange,
   xPosition,
   onXPositionChange,
   yPosition,
   onYPositionChange,
+  onPreview,
+  onApplyFinal,
 }: ControlPanelProps) {
+  const treatments = TREATMENTS_BY_CATEGORY[selectedCategory] ?? [];
   return (
     <div className="w-72 flex-shrink-0 space-y-6">
       <div>
@@ -30,9 +48,15 @@ export function ControlPanel({
       
       <div>
         <h2 className="text-slate-900 dark:text-slate-100 mb-2 transition-colors">Treatment</h2>
-        <div className="px-4 py-2.5 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 transition-colors">
-          <span className="text-slate-700 dark:text-slate-300 transition-colors">Temples Fillers</span>
-        </div>
+        <select
+          value={selectedTreatment}
+          onChange={(e) => onTreatmentChange(e.target.value)}
+          className="w-full px-4 py-2.5 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-800 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+        >
+          {treatments.map((t) => (
+            <option key={t} value={t}>{formatTreatmentName(t)}</option>
+          ))}
+        </select>
       </div>
       
       <div>
@@ -89,12 +113,12 @@ export function ControlPanel({
       <div>
         <h2 className="text-slate-900 dark:text-slate-100 mb-3 transition-colors">Actions</h2>
         <div className="flex gap-2">
-          <button onClick={useState}
+          <button onClick={onPreview}
             
            className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40  ">
             Preview (fast)
           </button>
-          <button className="flex-1 px-4 py-2.5 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-all border border-slate-200 dark:border-slate-600">
+          <button onClick={onApplyFinal} className="flex-1 px-4 py-2.5 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-all border border-slate-200 dark:border-slate-600">
             Apply Final
           </button>
         </div>
