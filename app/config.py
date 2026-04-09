@@ -8,12 +8,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Directory paths
 UPLOAD_DIR = BASE_DIR / "uploads"
-OUTPUT_DIR = BASE_DIR / "outputs"
 TEMP_DIR = BASE_DIR / "temp"
 
 # Create directories if they don't exist
 UPLOAD_DIR.mkdir(exist_ok=True)
-OUTPUT_DIR.mkdir(exist_ok=True)
 TEMP_DIR.mkdir(exist_ok=True)
 
 # File upload settings

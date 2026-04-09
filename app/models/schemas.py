@@ -26,16 +26,3 @@ class TransformationResponse(BaseModel):
     message: str
     preview_url: str
     transformation_id: str
-
-class SaveRequest(BaseModel):
-    """Request to save final result"""
-    image_id: str
-    transformations: List[Dict] = Field(..., description="List of all applied transformations")
-
-class SaveResponse(BaseModel):
-    """Response after saving"""
-    success: bool
-    message: str
-    output_url: str
-    metadata: Dict
-    
