@@ -50,23 +50,34 @@ TRANSFORMATION_MAP = {
 
 BASE_URL = "http://127.0.0.1:8000"
 
+
 @router.post("/apply", response_model=TransformationResponse)
 async def apply_transformation(request: TransformationRequest):
     """
-    Apply a single transformation to an image. Supports fast preview mode (downscaled image)
-    when request.preview is True, and full-resolution when False.
+    Apply a single transformation to an image. Supports fast preview mode
+    (downscaled image) when request.preview is True, and full-resolution
+    when False.
     """
     try:
         # Validate category and treatment
         if request.category not in TREATMENT_CATEGORIES:
-            raise HTTPException(status_code=400, detail=f"Invalid category. Must be one of: {list(TREATMENT_CATEGORIES.keys())}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid category. Must be one of: {list(TREATMENT_CATEGORIES.keys())}"
+            )
         if request.treatment not in TREATMENT_CATEGORIES[request.category]:
-            raise HTTPException(status_code=400, detail=f"Invalid treatment for category {request.category}")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid treatment for category {request.category}"
+            )
 
         # Find uploaded image file
         image_files = list(UPLOAD_DIR.glob(f"{request.image_id}.*"))
         if not image_files:
-            raise HTTPException(status_code=404, detail=f"Image with ID {request.image_id} not found")
+            raise HTTPException(
+                status_code=404,
+                detail=f"Image with ID {request.image_id} not found"
+            )
         image_path = image_files[0]
 
         # Use cached landmarks (detect if not cached)
@@ -77,26 +88,50 @@ async def apply_transformation(request: TransformationRequest):
         # Get transformation function
         transformation_func = TRANSFORMATION_MAP.get(request.treatment)
         if transformation_func is None:
-            raise HTTPException(status_code=501, detail=f"Transformation for {request.treatment} not yet implemented")
+            raise HTTPException(
+                status_code=501,
+                detail=f"Transformation for {request.treatment} not yet implemented"
+            )
 
         preview_mode = bool(request.preview)
 
         if preview_mode:
             # ------------------ PREVIEW MODE ------------------
             MAX_PREVIEW_DIM = 512
+
             orig_image = cv2.imread(str(image_path))
             if orig_image is None:
                 raise HTTPException(status_code=400, detail="Failed to load image")
 
+            # Original dimensions
             h, w = orig_image.shape[:2]
-            scale = 1.0
+
+            # FIX (Problem 3): Calculate new dimensions maintaining aspect ratio
+            # checking width and height independently for portrait vs landscape
             if max(h, w) > MAX_PREVIEW_DIM:
-                scale = MAX_PREVIEW_DIM / max(h, w)
-                preview_image = cv2.resize(orig_image, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
+                if w >= h:
+                    # Landscape or square — width is the longer side
+                    new_w = MAX_PREVIEW_DIM
+                    new_h = int(h * (MAX_PREVIEW_DIM / w))
+                else:
+                    # Portrait — height is the longer side
+                    new_h = MAX_PREVIEW_DIM
+                    new_w = int(w * (MAX_PREVIEW_DIM / h))
+                preview_image = cv2.resize(
+                    orig_image,
+                    (new_w, new_h),
+                    interpolation=cv2.INTER_AREA
+                )
             else:
+                new_w = w
+                new_h = h
                 preview_image = orig_image.copy()
 
-            # Scale facial regions (landmarks) to preview coordinates
+            # FIX (Problem 3): Separate scale factors for x and y axes
+            scale_x = new_w / w
+            scale_y = new_h / h
+
+            # Scale all facial region landmarks using correct axis scale factors
             scaled_facial_regions = {}
             for cat, regions in face_data['facial_regions'].items():
                 scaled_facial_regions[cat] = {}
@@ -104,20 +139,40 @@ async def apply_transformation(request: TransformationRequest):
                     scaled_pts = []
                     for p in pts:
                         scaled_pts.append({
-                            'x': int(p['x'] * scale),
-                            'y': int(p['y'] * scale),
+                            'x': int(p['x'] * scale_x),
+                            'y': int(p['y'] * scale_y),
                             'z': p.get('z', 0)
                         })
                     scaled_facial_regions[cat][region_name] = scaled_pts
 
+            # FIX (Problem 2): Also scale face_boundary landmarks using the
+            # same separate scale_x / scale_y so the boundary mask is accurate
+            # on the preview image. Without this, the boundary mask would be
+            # built at original-image coordinates and clip the warp wrongly.
+            raw_boundary = face_data.get('face_boundary', [])
+            scaled_face_boundary = []
+            for p in raw_boundary:
+                scaled_face_boundary.append({
+                    'x': int(p['x'] * scale_x),
+                    'y': int(p['y'] * scale_y),
+                    'z': p.get('z', 0)
+                })
+
+            # Build the combined landmarks dict that transformation functions receive.
+            # It contains facial_regions AND face_boundary so transformations.py
+            # can access both with landmarks.get('face_boundary', None).
+            scaled_landmarks = dict(scaled_facial_regions)
+            scaled_landmarks['face_boundary'] = scaled_face_boundary
+
+            # Position adjustment uses correct scaled dimensions
             position_adjustment = (
-                (request.position_x or 0) * preview_image.shape[1] * 0.1,
-                (request.position_y or 0) * preview_image.shape[0] * 0.1
+                (request.position_x or 0) * new_w * 0.1,
+                (request.position_y or 0) * new_h * 0.1
             )
 
             transformed_preview = transformation_func(
                 preview_image,
-                scaled_facial_regions,
+                scaled_landmarks,
                 request.intensity,
                 position_adjustment
             )
@@ -140,6 +195,12 @@ async def apply_transformation(request: TransformationRequest):
             if image is None:
                 raise HTTPException(status_code=400, detail="Failed to load image")
 
+            # Build the full-res landmarks dict.
+            # face_data['facial_regions'] contains the treatment regions.
+            # We also attach face_boundary so transformations can use it.
+            full_res_landmarks = dict(face_data['facial_regions'])
+            full_res_landmarks['face_boundary'] = face_data.get('face_boundary', [])
+
             position_adjustment = (
                 (request.position_x or 0) * face_data['image_width'] * 0.1,
                 (request.position_y or 0) * face_data['image_height'] * 0.1
@@ -147,7 +208,7 @@ async def apply_transformation(request: TransformationRequest):
 
             transformed_image = transformation_func(
                 image,
-                face_data['facial_regions'],
+                full_res_landmarks,
                 request.intensity,
                 position_adjustment
             )
@@ -187,7 +248,10 @@ async def apply_multiple_transformations(
         # Step 1: Find uploaded image
         image_files = list(UPLOAD_DIR.glob(f"{image_id}.*"))
         if not image_files:
-            raise HTTPException(status_code=404, detail=f"Image with ID {image_id} not found")
+            raise HTTPException(
+                status_code=404,
+                detail=f"Image with ID {image_id} not found"
+            )
 
         image_path = image_files[0]
 
@@ -200,6 +264,10 @@ async def apply_multiple_transformations(
         face_data = face_detector.get_landmarks_cached(str(image_path), image_id)
         if face_data is None or not face_data.get('face_detected'):
             raise HTTPException(status_code=400, detail="No face detected in image")
+
+        # Build landmarks dict including face_boundary
+        full_res_landmarks = dict(face_data['facial_regions'])
+        full_res_landmarks['face_boundary'] = face_data.get('face_boundary', [])
 
         # Step 4: Apply each transformation sequentially
         result_image = image.copy()
@@ -222,7 +290,7 @@ async def apply_multiple_transformations(
 
             result_image = transformation_func(
                 result_image,
-                face_data['facial_regions'],
+                full_res_landmarks,
                 trans_request.intensity,
                 position_adjustment
             )
@@ -268,7 +336,10 @@ async def get_treatment_categories():
 async def get_treatments_by_category(category_name: str):
     """Get all treatments for a specific category"""
     if category_name not in TREATMENT_CATEGORIES:
-        raise HTTPException(status_code=404, detail=f"Category '{category_name}' not found")
+        raise HTTPException(
+            status_code=404,
+            detail=f"Category '{category_name}' not found"
+        )
 
     return {
         "success": True,
