@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ORION Clinical Visualizer</title>
+  <title>ORION</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -594,34 +594,7 @@ function App() {
 
       {/* ── HEADER: flex-shrink-0, never grows ─────────────────── */}
       <header className="flex-shrink-0 border-b border-border-def bg-sidebar-bg">
-        <div className="h-12 px-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src={LOGO_SRC} alt="ORION" className="h-8 w-8 object-contain" />
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-text-primary tracking-widest">ORION</span>
-              <div className="h-3 w-px bg-border-def" />
-              <span className="text-xs text-text-muted font-mono hidden sm:block">Clinical Visualizer</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-card-bg border border-border-def">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span className="text-xs text-text-muted font-mono">:8000</span>
-            </div>
-            <label>
-              <input type="file" accept=".jpg,.jpeg,.png"
-                onChange={e => { const f = e.target.files?.[0]; if(f) handleUpload(f); e.target.value=''; }} />
-              <Button variant="secondary" className="cursor-pointer" onClick={() => {}}>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
-                Upload Photo
-              </Button>
-            </label>
-            <Button variant="final" onClick={handleDownload} disabled={!previewUrl}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Save Result
-            </Button>
-          </div>
-        </div>
+        
       </header>
 
       {/* ── BODY: flex-1, no overflow on outer wrapper ──────────── */}

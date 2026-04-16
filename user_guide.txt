@@ -253,3 +253,7 @@ Click the **moon / sun icon** in the top-right header to toggle between dark and
 ---
 
 *Cosmetic Visualizer • Demo UI • Not a medical device • For visualization only*
+
+Start backend: uvicorn app.main:app --reload
+Serve: python3 -m http.server 3000 from the same folder
+Open http://localhost:3000
