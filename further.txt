@@ -1,0 +1,2 @@
+Problem 1 (landmark indices) — requires research against MediaPipe docs
+Problem 4 (multi-transform stacking) — hardest, needs architecture change

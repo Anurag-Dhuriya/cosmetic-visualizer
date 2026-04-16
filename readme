@@ -1,0 +1,299 @@
+# ORION — Cosmetic Treatment Visualizer
+
+A clinical-grade web application that lets practitioners upload a patient photo and preview simulated cosmetic treatments (fillers, lifts, contouring) in real time using computer vision.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | Single-file React + Tailwind CSS (no build step) |
+| Backend | Python · FastAPI · Uvicorn |
+| Face Detection | MediaPipe FaceMesh (468 landmarks) |
+| Image Processing | OpenCV · NumPy · SciPy · Pillow |
+
+---
+
+## Project Structure
+
+```
+cosmetic-visualizer/
+├── app/
+│   ├── main.py                  # FastAPI entry point
+│   ├── config.py                # Paths, limits, treatment categories
+│   ├── routes/
+│   │   ├── __init__.py
+│   │   ├── upload.py            # POST /api/upload/image
+│   │   ├── analysis.py          # POST /api/analysis/detect-face
+│   │   └── transform.py         # POST /api/transform/apply
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── face_detector.py     # MediaPipe landmark detection + cache
+│   │   └── transformations.py   # 20 cosmetic treatment algorithms
+│   ├── models/
+│   │   ├── __init__.py
+│   │   └── schemas.py           # Pydantic request/response models
+│   └── utils/
+│       ├── __init__.py
+│       └── image_utils.py       # Reusable CV utilities
+├── uploads/                     # Uploaded patient photos (auto-created)
+├── temp/                        # Transformed result images (auto-created)
+├── frontend/
+│   └── index.html               # Complete frontend (single file, no build needed)
+├── requirements.txt             # Python dependencies
+└── README.md
+```
+
+---
+
+## Prerequisites
+
+Make sure the following are installed on your machine before starting.
+
+### 1. Python 3.10 or 3.11
+
+Check your version:
+```bash
+python3 --version
+```
+
+Download from: https://www.python.org/downloads/
+
+> **Note:** Python 3.12+ is not yet fully supported by MediaPipe. Use 3.10 or 3.11.
+
+### 2. Git
+
+Check if installed:
+```bash
+git --version
+```
+
+Download from: https://git-scm.com/downloads
+
+### 3. A modern web browser
+
+Chrome or Safari recommended.
+
+---
+
+## Installation — Step by Step
+
+### Step 1 — Clone the Repository
+
+```bash
+git clone https://github.com/Anurag-Dhuriya/cosmetic-visualizer.git
+cd cosmetic-visualizer
+```
+
+### Step 2 — Create a Python Virtual Environment
+
+A virtual environment keeps the project's dependencies isolated from your system Python.
+
+**macOS / Linux:**
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+**Windows (Command Prompt):**
+```cmd
+python -m venv venv
+venv\Scripts\activate
+```
+
+**Windows (PowerShell):**
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+```
+
+You should see `(venv)` appear at the start of your terminal prompt. This confirms the virtual environment is active.
+
+### Step 3 — Install Python Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+This installs all backend libraries including FastAPI, MediaPipe, OpenCV, and NumPy. The first install may take 2–5 minutes because MediaPipe and OpenCV are large packages.
+
+To verify installation succeeded:
+```bash
+pip list
+```
+
+### Step 4 — Create Required Directories
+
+The backend needs two folders to store uploaded and processed images. They are created automatically when the server first starts, but you can also create them manually:
+
+```bash
+mkdir -p uploads temp
+```
+
+### Step 5 — Start the Backend Server
+
+```bash
+uvicorn app.main:app --reload
+```
+
+You should see output like:
+```
+INFO:     Uvicorn running on http://127.0.0.1:8000
+INFO:     Started reloader process using StatReload
+INFO:     Application startup complete.
+```
+
+The `--reload` flag means the server will automatically restart whenever you edit a Python file. Leave this terminal running.
+
+To verify the backend is working, open your browser and go to:
+```
+http://localhost:8000
+```
+
+You should see a JSON response with available endpoints. You can also view the interactive API docs at:
+```
+http://localhost:8000/docs
+```
+
+### Step 6 — Serve the Frontend
+
+The frontend is a single `index.html` file inside the `frontend/` folder. Because it makes API calls to `localhost`, it must be served over HTTP (not opened directly as a file).
+
+Open a **second terminal window** (keep the backend running in the first), navigate to the frontend folder, and start a simple HTTP server:
+
+**macOS / Linux:**
+```bash
+cd frontend
+python3 -m http.server 3000
+```
+
+**Windows:**
+```cmd
+cd frontend
+python -m http.server 3000
+```
+
+### Step 7 — Open the App
+
+Open your browser and go to:
+```
+http://localhost:3000
+```
+
+You should see the ORION clinical visualizer interface. The connection indicator in the top-right corner will show `:8000` with a green dot when the backend is reachable.
+
+---
+
+## Using the App
+
+1. **Upload a photo** — Click "Upload Photo" or drag and drop a JPG/PNG onto the canvas. The photo must show a clear, front-facing face.
+2. **Select a category** — Choose Face, Lips, Nose, or Eyebrows from the left sidebar.
+3. **Choose a treatment** — Select a specific treatment from the dropdown in the right panel.
+4. **Adjust intensity** — Use the slider (0–100%) to control the strength of the effect.
+5. **Adjust position** — Use the X and Y sliders to fine-tune placement.
+6. **Preview** — Click **Preview** for a fast downscaled result.
+7. **Apply Final** — Click **Apply Final** for a full-resolution result suitable for patient records.
+8. **Download** — Click **Download Result** to save the output image.
+
+---
+
+## Available Treatments (20 total)
+
+| Category | Treatments |
+|---|---|
+| **Face** | Temples Fillers, Cheek Fillers, Chin Fillers, Jawline Contouring, Forehead Lines, Glabellar Lines, Nasolabial Folds, Marionette Folds |
+| **Lips** | Plumper, Cupids Bow, Upper Lip Fillers, Lower Lip Fillers, Corner Lip Lift |
+| **Nose** | Contouring, Bridge Fillers, Root Fillers, Tip Lift Fillers, Slimming Fillers |
+| **Eyebrows** | Brow Lift |
+
+---
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/upload/image` | Upload a patient photo. Returns `image_id`. |
+| `POST` | `/api/analysis/detect-face` | Run face landmark detection on an uploaded image. |
+| `POST` | `/api/transform/apply` | Apply a single treatment. Supports preview and full-res modes. |
+| `POST` | `/api/transform/apply-multiple` | Apply multiple treatments sequentially. |
+| `GET` | `/api/transform/categories` | List all treatment categories and treatments. |
+| `GET` | `/docs` | Interactive Swagger API documentation. |
+
+---
+
+## Troubleshooting
+
+### "Could not connect to backend" error in the browser
+
+- Make sure the backend server is still running in your first terminal.
+- Make sure you started it with `uvicorn app.main:app --reload` from inside the `cosmetic-visualizer/` folder.
+- Confirm it is running on port 8000 by visiting `http://localhost:8000`.
+
+### "No face detected" when uploading a photo
+
+- Use a clear, well-lit, front-facing photo.
+- The face should fill most of the frame (similar to a passport photo or a close-up selfie).
+- Avoid photos where the face is at a steep angle, partially cropped, or covered by sunglasses or a mask.
+
+### MediaPipe install fails
+
+- Confirm you are using Python 3.10 or 3.11: `python3 --version`
+- If you are on an Apple Silicon Mac (M1/M2/M3), MediaPipe may need Rosetta. Try:
+  ```bash
+  pip install mediapipe --extra-index-url https://google-coral.github.io/py-repo/
+  ```
+
+### OpenCV install fails on Apple Silicon
+
+```bash
+pip install opencv-python-headless==4.8.1.78
+```
+
+### Port 8000 or 3000 already in use
+
+Change the port:
+```bash
+# Backend on a different port
+uvicorn app.main:app --reload --port 8001
+
+# Frontend on a different port
+python3 -m http.server 3001
+```
+
+Then update the `API_BASE` variable at the top of `frontend/index.html` to match the new backend port.
+
+### Virtual environment not activating on Windows
+
+Run PowerShell as Administrator and execute:
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+Then try activating again.
+
+---
+
+## Configuration
+
+All backend settings are in `app/config.py`:
+
+| Setting | Default | Description |
+|---|---|---|
+| `MAX_FILE_SIZE` | 10 MB | Maximum upload file size |
+| `ALLOWED_EXTENSIONS` | `.jpg`, `.jpeg`, `.png` | Accepted file types |
+| `MAX_IMAGE_DIMENSION` | 2048 px | Images larger than this are resized on upload |
+| `UPLOAD_DIR` | `./uploads/` | Where original photos are stored |
+| `TEMP_DIR` | `./temp/` | Where transformed results are stored |
+
+---
+
+## Disclaimer
+
+This is a **demo application** and is **not a medical device**. Results are visual simulations only and are not intended to represent actual clinical outcomes. Do not use for medical diagnosis or treatment planning.
+
+---
+
+## Repository
+
+[https://github.com/Anurag-Dhuriya/cosmetic-visualizer](https://github.com/Anurag-Dhuriya/cosmetic-visualizer)
